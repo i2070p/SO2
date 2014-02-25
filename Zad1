@@ -1,0 +1,56 @@
+/* 
+ * File:   Zad1.cpp
+ * Author: psieminski
+ *
+ * Created on 25 luty 2014, 14:35
+ */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <iostream>
+#include <pwd.h>
+#include <grp.h>
+
+/*
+ * 
+ */
+using namespace std;
+gid_t* groups;
+int counter;
+int opt;
+bool gflag,uflag=0;
+int main(int argc, char** argv) {
+       while ((opt = getopt (argc, argv, "gu")) != -1)
+       {
+         switch (opt)
+           {
+           case 'g':
+             gflag = 1;
+             break;
+           case 'u':
+             uflag = 1;
+             break;
+           }
+       }
+if ((!gflag)&&(!uflag))
+{
+    groups = new gid_t[counter=getgroups(0,NULL)];
+    cout << "uid=" << getuid()<<"("<< getpwuid(getuid())->pw_name
+         << ") gid=" << getgid() << "(" << getgrgid(getgid())->gr_name
+         << ") grupy=" ;
+    getgroups(counter,groups);
+   for (int i = 0; i<counter; i++)
+    {
+        cout << groups[i] << "(" << getgrgid(groups[i])->gr_name;
+    }
+    cout <<")";
+        delete [] groups;
+}
+         if (gflag) cout << "gid=" << getgid();
+         if (uflag) cout << endl << "uid=" << getuid();
+   return (EXIT_SUCCESS);
+}
+
+
