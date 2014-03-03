@@ -1,9 +1,6 @@
-/* 
- * File:   Zad1.cpp
- * Author: psieminski
- *
- * Created on 25 luty 2014, 14:35
- */
+// SO2 IS1 211A LAB01
+// Patryk Siemiński
+// psieminski@wi.zut.edu.pl
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,14 +10,12 @@
 #include <pwd.h>
 #include <grp.h>
 
-/*
- * 
- */
 using namespace std;
 gid_t* groups;
 int counter;
 int opt;
 bool gflag,uflag=0;
+
 int main(int argc, char** argv) {
        while ((opt = getopt (argc, argv, "gu")) != -1)
        {
