@@ -1,0 +1,29 @@
+// SO2 IS1 211A LAB02
+// Patryk Siemiński
+// psieminski@wi.zut.edu.pl
+
+#include <stdlib.h>
+#include <iostream>
+#include <stdio.h>
+#include <utmp.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+using namespace std;
+
+int fd;
+utmp connected;
+
+int main(int argc, char** argv) {
+
+	int fd = open("/var/run/utmp", O_RDONLY);
+
+	while(read(fd, &connected, sizeof(utmp)) != 0) {
+			if(connected.ut_type == USER_PROCESS)
+			{
+			cout << "Username : " << connected.ut_name << endl;
+			}
+	}
+	return (EXIT_SUCCESS);
+}
