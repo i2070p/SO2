@@ -1,0 +1,36 @@
+#include <utmp.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <pwd.h>
+#include <grp.h>
+
+int main() {
+	// Wejsciowka: Napisz kawalek kodu pozwalajacy na wczytanie danych z pliku /var/run/utmp -> while(read(file_handler, &login_record, sizeof(struct utmp)) != 0) {
+	struct utmp login_record;
+	struct passwd *user_info;
+	int file_handler = open("/var/run/utmp", O_RDONLY);
+	printf("Aktualnie zalogowani użytkownicy: \n");
+
+	while(read(file_handler, &login_record, sizeof(struct utmp)) != 0) {
+		if(login_record.ut_type != USER_PROCESS) continue;
+
+		user_info = getpwnam(login_record.ut_user);
+
+		printf("uid=%d(%s) gid=%d(%s)\n",
+				user_info->pw_uid,
+				user_info->pw_name,
+				user_info->pw_gid,
+				getgrgid(user_info->pw_gid)->gr_name
+		);
+	}
+
+	return 1;
+}
+
+http://linux.die.net/man/2/open
+http://linux.die.net/man/3/open
+http://linux.die.net/man/2/read
+http://linux.die.net/man/3/read
