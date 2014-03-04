@@ -7,32 +7,47 @@
 #include <stdio.h>
 #include <utmp.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
 
 using namespace std;
 
-int fd;
+int fd; int opt; int counter=0;
 utmp connected;
 bool qflag=0;
+passwd* info;
 
 int main(int argc, char** argv) {
 
   while ((opt = getopt (argc, argv, "q")) != -1)
-       {
-       		if (opt=='q') qflag = 1;
-       }
-       
-       if (!qflag)
-       {
-	int fd = open("/var/run/utmp", O_RDONLY);
+  {
+        if (opt=='q') qflag = 1;
+  }
 
-	while(read(fd, &connected, sizeof(utmp)) != 0) {
-			if(connected.ut_type == USER_PROCESS)
-			{
-			cout << "Username : " << connected.ut_name << endl;
-			}
-	}
-	}
-	return (EXIT_SUCCESS);
+       
+            int fd = open("/var/run/utmp", O_RDONLY);
+
+            while(read(fd, &connected, sizeof(utmp)) != 0)
+            {
+                if(connected.ut_type == USER_PROCESS)
+                {
+                    if (!qflag)
+                    {
+                        info = getpwnam(connected.ut_name);
+                         cout << info->pw_uid << " (" << connected.ut_name << ") " <<
+                            info->pw_gid << " (" << getgrgid(info->pw_gid)->gr_name << ")" << endl;
+                    }
+                   else
+                    {
+                    counter++; cout << connected.ut_name << " ";
+                    }
+                }
+             }
+            
+    if (qflag) cout << endl << "Liczba użytkowników : " << counter << endl;
+    return (EXIT_SUCCESS);
 }
+
