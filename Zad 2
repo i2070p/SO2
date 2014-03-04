@@ -14,18 +14,13 @@ using namespace std;
 
 int fd;
 utmp connected;
-bool qflag;
+bool qflag=0;
 
 int main(int argc, char** argv) {
 
   while ((opt = getopt (argc, argv, "q")) != -1)
        {
-         switch (opt)
-           {
-           case 'q':
-             qflag = 1;
-             break;
-           }
+       		if (opt=='q') qflag = 1;
        }
        
        if (!qflag)
