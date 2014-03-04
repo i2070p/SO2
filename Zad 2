@@ -14,9 +14,22 @@ using namespace std;
 
 int fd;
 utmp connected;
+bool qflag;
 
 int main(int argc, char** argv) {
 
+  while ((opt = getopt (argc, argv, "q")) != -1)
+       {
+         switch (opt)
+           {
+           case 'q':
+             qflag = 1;
+             break;
+           }
+       }
+       
+       if (!qflag)
+       {
 	int fd = open("/var/run/utmp", O_RDONLY);
 
 	while(read(fd, &connected, sizeof(utmp)) != 0) {
@@ -24,6 +37,7 @@ int main(int argc, char** argv) {
 			{
 			cout << "Username : " << connected.ut_name << endl;
 			}
+	}
 	}
 	return (EXIT_SUCCESS);
 }
