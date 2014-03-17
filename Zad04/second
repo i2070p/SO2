@@ -1,0 +1,22 @@
+// SO2 IS1 211A LAB04
+// Patryk Siemiñski
+// psieminski@wi.zut.edu.pl
+
+#include <stdio.h>
+int sleep_time,i=0;
+
+int main(int argc, char** argv) {;
+
+	sleep_time=(int)argv[0][0];
+	if (argc<1)
+	{
+		exit(-1);
+	}
+	else
+	{	
+		sleep(sleep_time);
+	}
+
+ exit(sleep_time);
+
+}
