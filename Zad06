@@ -3,7 +3,7 @@
 // psieminski@wi.zut.edu.pl
 /*
 uordblks - odnosi się do całkowitego zaalokowanego obszaru pamięci - ilość w bajtach. Alokowanie za pomocą funkcji malloc.
-hblkhd - odnosi się do pamięci zaalokowanej w zmapowanych obszarach pamięci - ilość w bajtach. Alokowane za pomocą funkcji mmap.
+hblkhd - odnosi się do pamięci zaalokowanej w zmapowanych obszarach pamięci - ilość w bajtach. Alokowane za pomocą funkcji mmap. Gdy funkcją malloc zaalokujemy duże bloki (testowałem ok 130 MB) zalokowana była pamięć mapowana lub najpierw ta użytkowa następnie mapowana.
 */
 
 #include <stdio.h> 
