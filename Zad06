@@ -1,0 +1,81 @@
+// SO2 IS1 211A LAB06
+// Patryk Siemiński
+// psieminski@wi.zut.edu.pl
+
+#include <stdio.h> 
+#include <malloc.h>
+
+/* Prototypes for our hooks. */ 
+static void my_init_hook(void); 
+static void *my_malloc_hook(size_t, const void *);
+
+/* Variables to save original hooks. */ 
+static void *(*old_malloc_hook)(size_t, const void *); 
+
+/* Override initializing hook from the C library. */ 
+void (*__malloc_initialize_hook) (void) = my_init_hook; 
+
+int block_size=0;
+int block_count=0;
+int i=0;
+
+int main(int argc, char** argv) {
+
+	if (argc<3)
+	{
+		printf("Nie podano odpowiedniej ilosci parametrow.\n");
+		exit(-1);
+	}
+	else
+	{
+		block_size=atoi(argv[1]);
+		block_count=atoi(argv[2]);
+	}
+	printf("Zostanie zaalokowanych %d blokow o rozmiarach %d kB\n",block_count,block_size);
+	
+	char* blocks[block_count];
+	//char** blocks = malloc(block_count*sizeof(char*));
+
+	for (i=0; i<block_count; i++)
+	{
+		blocks[i] = malloc (1020 * block_size * sizeof(char));
+	}
+	for (i=0; i<block_count; i++)
+	{
+		free(blocks[i]);
+		printf("Zwolniono blok %d\n",i+1);
+	}
+
+	return (0);
+
+}
+
+static void my_init_hook(void) 
+{ 
+	old_malloc_hook = __malloc_hook; 
+	__malloc_hook = my_malloc_hook; 
+}
+
+static void * my_malloc_hook(size_t size, const void *caller) 
+{
+	struct mallinfo my_info = mallinfo();
+	int total_allocated = my_info.uordblks;
+	int total_mapped = my_info.hblkhd;
+
+	void *result; 
+	/* Restore all old hooks */ 
+	__malloc_hook = old_malloc_hook; 
+
+	/* Call recursively */ 
+	result = malloc(size); 
+	my_info = mallinfo();
+	/* Save underlying hooks */ 
+	old_malloc_hook = __malloc_hook; 
+	
+	/* Restore our own hooks */ 
+	__malloc_hook = my_malloc_hook; 
+
+	printf("UORDBLKS before malloc : %d, after malloc : %d\n",total_allocated, my_info.uordblks);
+	printf("HBLKHD before malloc : %d, after malloc : %d\n",total_mapped, my_info.hblkhd);
+	return result;  
+}
