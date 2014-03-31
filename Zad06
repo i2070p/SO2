@@ -35,10 +35,6 @@ int main(int argc, char** argv) {
 
 	for (i=0; i<block_count; i++)
 	{
-		blocks[i] = malloc (1020 * block_size * sizeof(char));
-	}
-	for (i=0; i<block_count; i++)
-	{
 		free(blocks[i]);
 		printf("Zwolniono blok %d\n",i+1);
 	}
