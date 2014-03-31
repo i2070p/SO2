@@ -1,6 +1,10 @@
 // SO2 IS1 211A LAB06
 // Patryk Siemiński
 // psieminski@wi.zut.edu.pl
+/*
+uordblks - odnosi się do całkowitego zaalokowanego obszaru pamięci - ilość w bajtach. Alokowanie za pomocą funkcji malloc.
+hblkhd - odnosi się do pamięci zaalokowanej w zmapowanych obszarach pamięci - ilość w bajtach. Alokowane za pomocą funkcji mmap.
+*/
 
 #include <stdio.h> 
 #include <malloc.h>
@@ -33,6 +37,10 @@ int main(int argc, char** argv) {
 	char* blocks[block_count];
 	//char** blocks = malloc(block_count*sizeof(char*));
 
+	for (i=0; i<block_count; i++)
+	{
+		blocks[i] = malloc (1020 * block_size * sizeof(char));
+	}
 	for (i=0; i<block_count; i++)
 	{
 		free(blocks[i]);
