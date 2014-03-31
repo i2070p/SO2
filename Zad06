@@ -2,8 +2,9 @@
 // Patryk Siemiński
 // psieminski@wi.zut.edu.pl
 /*
-uordblks - odnosi się do całkowitego zaalokowanego obszaru pamięci - ilość w bajtach. Alokowanie za pomocą funkcji malloc.
-hblkhd - odnosi się do pamięci zaalokowanej w zmapowanych obszarach pamięci - ilość w bajtach. Alokowane za pomocą funkcji mmap. Gdy funkcją malloc zaalokujemy duże bloki (testowałem ok 130 MB) zalokowana była pamięć mapowana lub najpierw ta użytkowa następnie mapowana.
+uordblks - odnosi się do całkowitego zaalokowanego obszaru pamięci w bajtach, zaalokowanego przez funkcję malloc NA STERCIE.
+hblkhd - odnosi się do zmapowanej pamięci wirtualnej - ilość w bajtach. Alokowane za pomocą funkcji mmap. Gdy blok pamięci rezerwowany funkcją malloc przekracza rozmiar sterty, pamięć ta jest lokowana za pomocą mmap i tworzona jest nowa zmapowana pamięć wirtualna. Domyślny rozmiar to 128 kB (MMAP_THRESHOLD).
+Różnice - mapięć uordblks odnosi się do całej wolnej pamięci (rozproszonej) zaś kblkhd odnosi się do pamięci zmapowanej, ciągłej - takiej że cały wymagany fragment mieści się w "ciągłym odcinku (pamięć wirtualna)" pamięci.
 */
 
 #include <stdio.h> 
