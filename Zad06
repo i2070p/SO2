@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
 	for (i=0; i<block_count; i++)
 	{
-		blocks[i] = malloc (1020 * block_size * sizeof(char));
+		blocks[i] = malloc (1024 * block_size * sizeof(char));
 	}
 	for (i=0; i<block_count; i++)
 	{
