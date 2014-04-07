@@ -39,7 +39,6 @@ int* chPerThread;
 int tmp = 0;
 char lookForIt;
 char* fileName;
-char** stringForThread;
 pthread_t* createdThreads;
 
 int main(int argc, char** argv) {
@@ -59,7 +58,6 @@ int main(int argc, char** argv) {
 
 	FILE * pFile;
 	int lSize;
-	char * buffer;
 	size_t result;
 
 	pFile = fopen ( fileName , "rb" );
@@ -113,6 +111,15 @@ int main(int argc, char** argv) {
 
 	printf("W pliku wystapilo %d znakow %c.\n",found,lookForIt);
 
+	free(chPerThread);
+	for (i=0; i<threads;i++)
+	{
+		free(threadArgs[i].lookIn);
+	}
+	free(threadArgs);
+	free(createdThreads);
+
+	pthread_mutex_destroy(&mutex);
 	return (0);
 
 }
