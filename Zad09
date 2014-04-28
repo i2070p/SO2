@@ -16,6 +16,7 @@ char** textForProc;
 int** socketsArr;
 char** buffArr;
 int child;
+int counterChars = 0;
 
 int count(char* lookIn, int length)
 {
@@ -96,40 +97,44 @@ if ((child = fork()) == -1)
 printf("Blad utworzenia procesu\n");
 }
 else if (child) { // Wyslanie pakietu od rodzica do dziecka
-close(socketsArr[created][0]);
 if (write(socketsArr[created][1], textForProc[created], chPerThread[0]) < 0)
 {
 printf("Blad wysylania wiadomosci\n");
 }
-close(socketsArr[created][1]);
 created++;
 
 } else { // Odebranie wiadomosci od rodzica
-close(socketsArr[created][1]);
 buffArr[created] = malloc (sizeof(char)*chPerThread[0]);
 if (read(socketsArr[created][0], buffArr[created], chPerThread[0], 0) < 0)
 {
 printf("Blad odbierania wiadomosci\n");
 }
-int foundCh = count(buffArr[created],chPerThread[0]);
-close(socketsArr[created][0]);
-printf("Znaleziono %d znakow %c\n",foundCh,lookForIt);
+int* foundCh = malloc(sizeof(int));
+*foundCh = count(buffArr[created],chPerThread[created]);
+//printf("Znaleziono %d znakow %c\n",*foundCh,lookForIt);
+if (write(socketsArr[created][0], foundCh, sizeof(int)) < 0)
+{
+printf("Blad wysylania wiadomosci\n");
+}
 return(0);
 }
 }
-/*
+
 sleep(1);
-int rec;
+int* rec = malloc(sizeof(int));;
 for (i=0; i<threads; i++)
 {
-  close(socketsArr[i][0]);
-if (read(socketsArr[i][0], &rec, sizeof(int), 0) < 0)
+if (read(socketsArr[i][1], rec, sizeof(int), 0) < 0)
 {
 printf("Blad odbierania wiadomosci\n");
 }
+counterChars +=*rec;
+close(socketsArr[i][0]);
 close(socketsArr[i][1]);
 }
-*/
+
+printf("Znaleziono %d znakow %c\n",counterChars,lookForIt);
+
 return (0);
 
 }
