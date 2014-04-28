@@ -88,18 +88,23 @@ int main(int argc, char** argv) {
 		textForProc[i] = malloc (sizeof(char)*chPerThread[i]);
 		fread(textForProc[i],1,chPerThread[i],pFile);
 		socketsArr[i] = malloc (sizeof(int)*2);
+
+		if (socketpair(AF_UNIX, SOCK_STREAM, 0, socketsArr[i]) < 0) {
+		printf("Nie udalo sie utworzyc pary socketu\n");
+		exit(1);
+	}
 	}
 
-	while(threads>0)
+	int created = 0;
+	while(threads>created)
 	{
 		if ((child = fork()) == -1)
 		{
 			printf("Blad utworzenia procesu\n");
-					threads--;
 		}
 		else if (child) {     // Wyslanie pakietu od rodzica do dziecka 
+			created++;
 
-		printf("Wykonalo sie\n");
 		}
 		else
 		{
