@@ -20,121 +20,121 @@ int counterChars = 0;
 
 int count(char* lookIn, int length)
 {
-int found = 0;
-int i = 0;
-for(i = 0; i <length; i++)
-{
-if(lookIn[i] == lookForIt)
-{
-found++;
-}
-}
+	int found = 0;
+	int i = 0;
+	for(i = 0; i <length; i++)
+	{
+		if(lookIn[i] == lookForIt)
+		{
+			found++;
+		}
+	}
 
-return found;
+	return found;
 }
 
 int main(int argc, char** argv) {
 
-if (argc<4)
-{
-printf("Nie podano odpowiedniej ilosci parametrow.\n");
-exit(0);
-}
-else
-{
-fileName=argv[1];
-lookForIt=argv[2][0];
-threads=atoi(argv[3]);
-}
+	if (argc<4)
+	{
+		printf("Nie podano odpowiedniej ilosci parametrow.\n");
+		exit(0);
+	}
+	else
+	{
+		fileName=argv[1];
+		lookForIt=argv[2][0];
+		threads=atoi(argv[3]);
+	}
 
-printf("Zostanie utworzonych %d watkow szukajacych litery %c w pliku o nazwie %s\n",threads,lookForIt,fileName);
+	printf("Zostanie utworzonych %d watkow szukajacych litery %c w pliku o nazwie %s\n",threads,lookForIt,fileName);
 
-FILE * pFile;
-int lSize;
-size_t result;
+	FILE * pFile;
+	int lSize;
+	size_t result;
 
-pFile = fopen ( fileName , "rb" );
-if (pFile==NULL) {printf("Couldn't open file %s\n",fileName); exit (1);}
+	pFile = fopen ( fileName , "rb" );
+	if (pFile==NULL) {printf("Couldn't open file %s\n",fileName); exit (1);}
 
-fseek (pFile , 0 , SEEK_END);
-lSize = ftell (pFile);
-rewind (pFile);
+	fseek (pFile , 0 , SEEK_END);
+	lSize = ftell (pFile);
+	rewind (pFile);
 
-tmp = lSize;
-chPerThread = malloc (sizeof(int)*threads);
+	tmp = lSize;
+	chPerThread = malloc (sizeof(int)*threads);
 
-int currentThread = 0;
+	int currentThread = 0;
 
-while(tmp>0)
-{
-chPerThread[currentThread]++;
-if (++currentThread==threads) currentThread=0;
-tmp--;
-}
+	while(tmp>0)
+	{
+		chPerThread[currentThread]++;
+		if (++currentThread==threads) currentThread=0;
+		tmp--;
+	}
 
-textForProc = malloc (sizeof(char*)*threads);
+	textForProc = malloc (sizeof(char*)*threads);
 
-socketsArr = malloc (sizeof(int*)*threads);
-buffArr = malloc (sizeof(char*)*threads);
-int i = 0;
-for (i=0; i<threads; i++)
-{
-textForProc[i] = malloc (sizeof(char)*chPerThread[i]);
-fread(textForProc[i],1,chPerThread[i],pFile);
-socketsArr[i] = malloc (sizeof(int)*2);
+	socketsArr = malloc (sizeof(int*)*threads);
+	buffArr = malloc (sizeof(char*)*threads);
+	int i = 0;
+	for (i=0; i<threads; i++)
+	{
+		textForProc[i] = malloc (sizeof(char)*chPerThread[i]);
+		fread(textForProc[i],1,chPerThread[i],pFile);
+		socketsArr[i] = malloc (sizeof(int)*2);
 
-if (socketpair(AF_UNIX, SOCK_STREAM, 0, socketsArr[i]) < 0) {
-printf("Nie udalo sie utworzyc pary socketu\n");
-exit(1);
-}
-}
+		if (socketpair(AF_UNIX, SOCK_STREAM, 0, socketsArr[i]) < 0) {
+			printf("Nie udalo sie utworzyc pary socketu\n");
+			exit(1);
+		}
+	}
 
-int created = 0;
-while(threads>created)
-{
-if ((child = fork()) == -1)
-{
-printf("Blad utworzenia procesu\n");
-}
-else if (child) { // Wyslanie pakietu od rodzica do dziecka
-if (write(socketsArr[created][1], textForProc[created], chPerThread[0]) < 0)
-{
-printf("Blad wysylania wiadomosci\n");
-}
-created++;
+	int created = 0;
+	while(threads>created)
+	{
+		if ((child = fork()) == -1)
+		{
+			printf("Blad utworzenia procesu\n");
+		}
+		else if (child) { // Wyslanie pakietu od rodzica do dziecka
+			if (write(socketsArr[created][1], textForProc[created], chPerThread[0]) < 0)
+			{
+				printf("Blad wysylania wiadomosci\n");
+			}
+			created++;
 
-} else { // Odebranie wiadomosci od rodzica
-buffArr[created] = malloc (sizeof(char)*chPerThread[0]);
-if (read(socketsArr[created][0], buffArr[created], chPerThread[0], 0) < 0)
-{
-printf("Blad odbierania wiadomosci\n");
-}
-int* foundCh = malloc(sizeof(int));
-*foundCh = count(buffArr[created],chPerThread[created]);
-//printf("Znaleziono %d znakow %c\n",*foundCh,lookForIt);
-if (write(socketsArr[created][0], foundCh, sizeof(int)) < 0)
-{
-printf("Blad wysylania wiadomosci\n");
-}
-return(0);
-}
-}
+		} else { // Odebranie wiadomosci od rodzica
+			buffArr[created] = malloc (sizeof(char)*chPerThread[0]);
+			if (read(socketsArr[created][0], buffArr[created], chPerThread[0], 0) < 0)
+			{
+				printf("Blad odbierania wiadomosci\n");
+			}
+			int* foundCh = malloc(sizeof(int));
+			*foundCh = count(buffArr[created],chPerThread[created]);
+			//printf("Znaleziono %d znakow %c\n",*foundCh,lookForIt);
+			if (write(socketsArr[created][0], foundCh, sizeof(int)) < 0)
+			{
+				printf("Blad wysylania wiadomosci\n");
+			}
+			return(0);
+		}
+	}
 
-sleep(1);
-int* rec = malloc(sizeof(int));;
-for (i=0; i<threads; i++)
-{
-if (read(socketsArr[i][1], rec, sizeof(int), 0) < 0)
-{
-printf("Blad odbierania wiadomosci\n");
-}
-counterChars +=*rec;
-close(socketsArr[i][0]);
-close(socketsArr[i][1]);
-}
+	sleep(1);
+	int* rec = malloc(sizeof(int));;
+	for (i=0; i<threads; i++)
+	{
+		if (read(socketsArr[i][1], rec, sizeof(int), 0) < 0)
+		{
+			printf("Blad odbierania wiadomosci\n");
+		}
+		counterChars +=*rec;
+		close(socketsArr[i][0]);
+		close(socketsArr[i][1]);
+	}
 
-printf("Znaleziono %d znakow %c\n",counterChars,lookForIt);
+	printf("Znaleziono %d znakow %c\n",counterChars,lookForIt);
 
-return (0);
+	return (0);
 
 }
