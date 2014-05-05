@@ -1,6 +1,7 @@
 // SO2 IS1 211A LAB10
 // Patryk Siemiński
 // psieminski@wi.zut.edu.pl
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,11 +9,6 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
-
-#define FTW_SKIP_SUBTREE 2
-#define FTW_PHYS 1
-#define FTW_D 1
-#define FTW_ACTIONRETVAL 16
 
 display_info(const char *fpath, const struct stat *sb, int tflag, struct FTW *ftwbuf)
 {
@@ -44,9 +40,9 @@ display_info(const char *fpath, const struct stat *sb, int tflag, struct FTW *ft
 };
 
 int main(int argc, char** argv) {
-	int flags = 0; 
-	flags |= FTW_ACTIONRETVAL;
 
+  int flags =0;
+  flags |= FTW_ACTIONRETVAL;
   if (nftw((argc < 2) ? "." : argv[1], display_info, 20,flags) == -1) 
   {
         perror("ftw");
