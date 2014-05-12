@@ -1,0 +1,123 @@
+// SO2 IS1 211A LAB10
+// Patryk Siemiński
+// psieminski@wi.zut.edu.pl
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ftw.h>
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <wait.h>
+#include <string.h>
+#include <unistd.h>
+
+display_info(const char *fpath, const struct stat *sb)
+{
+	struct passwd *owner = getpwuid(sb->st_uid);
+	struct group *ownerGroup = getgrgid(sb->st_gid);
+	char time[13];
+	strftime(time,13,"%b %d %H:%M",localtime(&(sb->st_mtime)));
+
+	printf("%c%c%c%c%c%c%c%c%c%c %4d %s %s %8d %s %s\n",
+		S_ISDIR (sb->st_mode) ?'d':'-',
+		(S_IRUSR & sb->st_mode) ?'r':'-',
+		(S_IWUSR & sb->st_mode) ?'w':'-',
+		(S_IXUSR & sb->st_mode) ?'x':'-',
+		(S_IRGRP & sb->st_mode) ?'r':'-',
+		(S_IWGRP & sb->st_mode) ?'w':'-',
+		(S_IXGRP & sb->st_mode) ?'x':'-',
+		(S_IROTH & sb->st_mode) ?'r':'-',
+		(S_IWOTH & sb->st_mode) ?'w':'-',
+		(S_IXOTH & sb->st_mode) ?'x':'-',
+		(int)sb->st_nlink,
+		owner->pw_name, 
+		ownerGroup->gr_name,
+		(int)sb->st_size,
+		time,
+		fpath);
+
+	return(0);
+};
+
+char* directory;
+int depth;
+DIR* openedDir;
+struct dirent* dirInfo;
+struct stat statBuff;
+int child;
+char** newArgs;
+char tmp[3];
+
+int main(int argc, char** argv) {
+
+	if (argc<3)
+	{
+		printf("Nie podano odpowiedniej ilosci parametrow.\n");
+		exit(0);
+	}
+	else
+	{
+		directory=argv[1];
+		depth=atoi(argv[2]);
+		if (depth<0)
+		{
+			printf("Glebokosc powinna byc wieksza rowna 0 (0 - tylko aktualny katalog)\n");
+			exit(1);
+		}
+	}
+
+	openedDir = opendir(directory);
+
+	while (dirInfo=readdir(openedDir))
+	{
+		if(strcmp(dirInfo->d_name,".")==0 || strcmp(dirInfo->d_name,"..")==0) continue;
+
+			newArgs = malloc(sizeof(char**)*3);
+			newArgs[0]=argv[0];
+			newArgs[1]= malloc (sizeof(char*)*(sizeof(argv[0])+sizeof(dirInfo->d_name)+sizeof("/")));
+			strcat(newArgs[1],directory);
+			strcat(newArgs[1],"/");
+			strcat(newArgs[1],dirInfo->d_name);
+
+		if (dirInfo->d_type==DT_DIR)
+		{			
+			stat(newArgs[1],&statBuff);
+			display_info(newArgs[1],&statBuff);
+			
+			child = fork();
+	
+			if (child>0)
+			{
+				waitpid(child,0,0);
+			}
+			else if (child==0)
+			{
+				depth=depth-1;
+				if (depth>=0)
+				{
+				newArgs[2] = malloc (sizeof(char)*3);
+				sprintf(newArgs[2],"%2d",depth);
+				execl("./test",newArgs[0],newArgs[1],newArgs[2],NULL);
+				}
+				else
+				{
+				  exit(2);
+				}
+			}
+			else
+			{
+			}
+		}
+		else
+		{
+			stat(newArgs[1],&statBuff);
+			display_info(newArgs[1],&statBuff);
+		}
+	}
+
+	return (0);
+
+}
