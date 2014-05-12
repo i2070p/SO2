@@ -75,20 +75,19 @@ int main(int argc, char** argv) {
 	{
 		if(strcmp(dirInfo->d_name,".")==0 || strcmp(dirInfo->d_name,"..")==0) continue;
 
-			newArgs = malloc(sizeof(char**)*3);
-			newArgs[0]=argv[0];
-			newArgs[1]= malloc (sizeof(char*)*(sizeof(argv[0])+sizeof(dirInfo->d_name)+sizeof("/")));
-			strcat(newArgs[1],directory);
-			strcat(newArgs[1],"/");
-			strcat(newArgs[1],dirInfo->d_name);
+		newArgs = malloc(sizeof(char**)*3);
+		newArgs[1]= malloc (sizeof(char*)*(sizeof(argv[0])+sizeof(dirInfo->d_name)+sizeof("/")));
+		strcat(newArgs[1],directory);
+		strcat(newArgs[1],"/");
+		strcat(newArgs[1],dirInfo->d_name);
 
 		if (dirInfo->d_type==DT_DIR)
 		{			
 			stat(newArgs[1],&statBuff);
 			display_info(newArgs[1],&statBuff);
-			
+
 			child = fork();
-	
+
 			if (child>0)
 			{
 				waitpid(child,0,0);
@@ -98,17 +97,19 @@ int main(int argc, char** argv) {
 				depth=depth-1;
 				if (depth>=0)
 				{
-				newArgs[2] = malloc (sizeof(char)*3);
-				sprintf(newArgs[2],"%2d",depth);
-				execl("./test",newArgs[0],newArgs[1],newArgs[2],NULL);
+					newArgs[0]=argv[0];
+					newArgs[2] = malloc (sizeof(char)*3);
+					sprintf(newArgs[2],"%2d",depth);
+					execl("./test",newArgs[0],newArgs[1],newArgs[2],NULL);
 				}
 				else
 				{
-				  exit(2);
+					exit(2);
 				}
 			}
 			else
 			{
+				printf("Nie udalo sie utworzyc procesu. Folder nie zostanie przeszukany\n");
 			}
 		}
 		else
