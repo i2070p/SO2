@@ -7,9 +7,10 @@
 #include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/sem.h>
 
-key_t memoryKey;
-int semaphoreKey, segmentId;
+key_t memoryKey,semaphoreKey;
+int semaphoreId, segmentId;
 int x,y;
 
 struct NAC {
@@ -104,6 +105,7 @@ int main(int argc, char** argv) {
 
 	if (segmentId <0)
 	{
+		semaphoreId = segmentId = semget(semaphoreKey, 1, IPC_CREAT);
 		segmentId = shmget(memoryKey, 1024 , IPC_CREAT | 0666);
 		if ((attach = shmat(segmentId, NULL, 0)) == (struct NAC*) -1) {
 			printf("Master error\n");
@@ -157,6 +159,7 @@ int main(int argc, char** argv) {
 	}
 	else
 	{
+		semaphoreId = segmentId = semget(semaphoreKey, 0, 0);
 		if ((attach = shmat(segmentId, NULL, 0)) == (struct NAC *) -1) {
 			printf("Slave error\n");
 		}
