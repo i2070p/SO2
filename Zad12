@@ -30,9 +30,8 @@ void drawMap(char Map[3][3])
 int insertMark(int x, int y, char Map[3][3], int player)
 {
 	int flag = 0;
-	if (x>3 || x<1)  { printf("x position has to be  from range 1-3\n"); flag = 1;};
-	if (y>3 || y<1)  { printf("y position has to be  from range 1-3\n"); flag = 1;};
-	if (flag) return(1);
+	if (x>3 || x<1)  { printf("x position has to be  from range 1-3\n"); return(1);};
+	if (y>3 || y<1)  { printf("y position has to be  from range 1-3\n"); return(1);};
 	if (Map[x-1][y-1]=='#')
 	{
 		if (player==1)
