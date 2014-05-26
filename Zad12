@@ -1,0 +1,194 @@
+// SO2 IS1 211A LAB12
+// Patryk Siemiński
+// psieminski@wi.zut.edu.pl
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+key_t memoryKey;
+int semaphoreKey, segmentId;
+int x,y;
+
+struct NAC {
+	char map[3][3];
+	int players;
+	int turn;
+	int end;
+};
+
+void drawMap(char Map[3][3])
+{
+	printf("\n%c%c%c\n", Map[0][0],Map[0][1],Map[0][2]);
+	printf("%c%c%c\n", Map[1][0],Map[1][1],Map[1][2]);
+	printf("%c%c%c\n", Map[2][0],Map[2][1],Map[2][2]);
+}
+
+int insertMark(int x, int y, char Map[3][3], int player)
+{
+	int flag = 0;
+	if (x>3 || x<1)  { printf("x position has to be  from range 1-3\n"); flag = 1;};
+	if (y>3 || y<1)  { printf("y position has to be  from range 1-3\n"); flag = 1;};
+	if (flag) return(1);
+	if (Map[x-1][y-1]=='#')
+	{
+		if (player==1)
+		{
+			Map[x-1][y-1]='X'; return(0);
+		}
+		else
+		{
+			Map[x-1][y-1]='O'; return(0);
+		}
+	}
+	else
+	{
+		printf("This positions is already taken!\n");
+		return(1);
+	}
+	return(1);
+}
+
+int checkState(char Map[3][3])
+{
+	int x;
+
+	for (x=0; x<3; x++)
+	{
+		if ((Map[x][0] == Map[x][1]) && (Map[x][1] == Map[x][2]))
+		{
+			if (Map[x][0] == 'X') return(1);
+			if (Map[x][0] == 'O') return(2);
+		}
+		if ((Map[0][x] == Map[1][x]) && (Map[1][x] == Map[2][x]))
+		{
+			if (Map[0][x] == 'X') return(1);
+			if (Map[0][x] == 'O') return(2);
+		}
+	}
+
+	if ((Map[0][0] == Map[1][1]) && (Map[1][1] == Map[2][2]))
+	{
+			if (Map[0][0] == 'X') return(1);
+			if (Map[0][0] == 'O') return(2);
+	}
+
+	if ((Map[0][2] == Map[1][1]) && (Map[1][1] == Map[2][0]))
+	{
+			if (Map[0][2] == 'X') return(1);
+			if (Map[0][2] == 'O') return(2);
+	}
+
+	return(0);
+}
+
+struct NAC* attach;
+struct NAC* buff;
+
+int main(int argc, char** argv) {
+
+	if (argc<3)
+	{
+		printf("Nie podano odpowiedniej ilosci parametrow.\n");
+		exit(0);
+	}
+	else
+	{
+		memoryKey=atoi(argv[1]);
+		semaphoreKey=atoi(argv[1]);
+	}
+
+	segmentId = shmget(memoryKey,1024 , 0666);
+
+	if (segmentId <0)
+	{
+		segmentId = shmget(memoryKey, 1024 , IPC_CREAT | 0666);
+		if ((attach = shmat(segmentId, NULL, 0)) == (struct NAC*) -1) {
+			printf("Master error\n");
+		}
+		buff = attach;
+		buff->players=1;
+
+		int i,j;
+
+		for (i=0; i<3; i++)
+		{
+			for (j=0; j<3; j++)
+			{
+				buff->map[i][j]='#';
+			}
+		}
+		buff->turn=2;
+		buff->end=0;
+		printf("\n Waiting for second player! \n");
+		while(buff->players==1)
+		{
+			sleep(1);
+		}
+		printf("\n Player 2 has joined the game! \n");
+		while(buff->end!=1)
+		{
+			printf("Please wait for enemys move!\n");
+			while(buff->turn!=1) //1
+			{
+				sleep(1);
+			}
+			drawMap(buff->map);
+			if (buff->end) break;
+
+			do
+			{
+				printf("\nInsert your character!\n");
+				printf("Set x : "); scanf("%d",&x);
+				printf("Set y : "); scanf("%d",&y);
+			}while(insertMark(y,x,buff->map,buff->turn));
+
+			drawMap(buff->map);
+			buff->end = checkState(buff->map);
+			buff->turn=2;
+			if (buff->end) break;
+		}
+
+		printf("\nPlayer %d has won!\n",buff->end);
+		shmdt(attach);
+		shmdt(buff);
+	}
+	else
+	{
+		if ((attach = shmat(segmentId, NULL, 0)) == (struct NAC *) -1) {
+			printf("Slave error\n");
+		}
+		buff = attach;
+		buff->players=2;
+		printf("\n You have joined the game! \n");
+		while(buff->end!=1)
+		{
+			drawMap(buff->map);
+			if (buff->end) break;
+
+			do
+			{
+				printf("\nInsert your character!\n");
+				printf("Set x : "); scanf("%d",&x);
+				printf("Set y : "); scanf("%d",&y);
+			}while(insertMark(y,x,buff->map,buff->turn));
+
+			drawMap(buff->map);
+			buff->end = checkState(buff->map);
+			buff->turn=1;
+
+			if (buff->end) break;
+			printf("Please wait for enemys move!\n");
+			while(buff->turn!=2) //2
+			{
+				sleep(1);
+			}
+		}
+		printf("\nPlayer %d has won!\n",buff->end);
+		shmdt(attach);
+		shmdt(buff);
+	}
+	return (0);
+}
