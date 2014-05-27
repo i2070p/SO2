@@ -1,6 +1,3 @@
-http://www.minek.com/files/unix_examples/semab.html
-http://www.cs.cf.ac.uk/Dave/C/node26.html
-
 // SO2 IS1 211A LAB12
 // Patryk Siemiński
 // psieminski@wi.zut.edu.pl
@@ -22,6 +19,23 @@ struct NAC {
 	int turn;
 	int end;
 };
+
+void initializeGame(struct NAC* game)
+{
+	game->players=1;
+
+	int i,j;
+	for (i=0; i<3; i++)
+	{
+		for (j=0; j<3; j++)
+		{
+			game->map[i][j]='#';
+		}
+	}
+
+	game->turn=2;
+	game->end=0;
+}
 
 void drawMap(char Map[3][3])
 {
@@ -56,7 +70,8 @@ int insertMark(int x, int y, char Map[3][3], int player)
 
 int checkState(char Map[3][3])
 {
-	int x;
+	int x,y,c;
+	c=0;
 
 	for (x=0; x<3; x++)
 	{
@@ -74,21 +89,31 @@ int checkState(char Map[3][3])
 
 	if ((Map[0][0] == Map[1][1]) && (Map[1][1] == Map[2][2]))
 	{
-			if (Map[0][0] == 'X') return(1);
-			if (Map[0][0] == 'O') return(2);
+		if (Map[0][0] == 'X') return(1);
+		if (Map[0][0] == 'O') return(2);
 	}
 
 	if ((Map[0][2] == Map[1][1]) && (Map[1][1] == Map[2][0]))
 	{
-			if (Map[0][2] == 'X') return(1);
-			if (Map[0][2] == 'O') return(2);
+		if (Map[0][2] == 'X') return(1);
+		if (Map[0][2] == 'O') return(2);
 	}
+
+	for (x=0;x<3;x++)
+	{
+		for (y=0; y<3; y++)
+		{
+			if (Map[x][y]!='#') c++;
+		}
+	}
+	if (c==9) return(3);
 
 	return(0);
 }
 
 struct NAC* attach;
 struct NAC* buff;
+struct sembuf* sops;
 
 int main(int argc, char** argv) {
 
@@ -100,46 +125,41 @@ int main(int argc, char** argv) {
 	else
 	{
 		memoryKey=atoi(argv[1]);
-		semaphoreKey=atoi(argv[1]);
+		semaphoreKey=atoi(argv[2]);
 	}
 
-	segmentId = shmget(memoryKey,1024 , 0666);
+	sops = (struct sembuf *) malloc(sizeof(struct sembuf));
+	sops[0].sem_flg = 0;
+
+	segmentId = shmget(memoryKey,sizeof(struct NAC) , 0777);
 
 	if (segmentId <0)
 	{
-		semaphoreId = segmentId = semget(semaphoreKey, 1, IPC_CREAT);
-		segmentId = shmget(memoryKey, 1024 , IPC_CREAT | 0666);
+		semaphoreId = semget(semaphoreKey, 2, IPC_CREAT | 0600);
+		semctl(semaphoreId,0,SETVAL,1); semctl(semaphoreId,1,SETVAL,0);
+
+		segmentId = shmget(memoryKey, sizeof(struct NAC) , IPC_CREAT | 0777);
+
 		if ((attach = shmat(segmentId, NULL, 0)) == (struct NAC*) -1) {
 			printf("Master error\n");
 		}
+
 		buff = attach;
-		buff->players=1;
 
-		int i,j;
+		// initializing game map
+		initializeGame(buff);
+		// end of initializing game map
 
-		for (i=0; i<3; i++)
-		{
-			for (j=0; j<3; j++)
-			{
-				buff->map[i][j]='#';
-			}
-		}
-		buff->turn=2;
-		buff->end=0;
-		printf("\n Waiting for second player! \n");
-		while(buff->players==1)
-		{
-			sleep(1);
-		}
-		printf("\n Player 2 has joined the game! \n");
 		while(buff->end!=1)
 		{
-			printf("Please wait for enemys move!\n");
-			while(buff->turn!=1) //1
-			{
-				sleep(1);
-			}
+			printf("\nPlease wait for enemys move!\n");
+
+			sops[0].sem_num = 0;
+			sops[0].sem_op = 0;
+			semop(semaphoreId,sops,1);
+
 			drawMap(buff->map);
+
 			if (buff->end) break;
 
 			do
@@ -153,21 +173,37 @@ int main(int argc, char** argv) {
 			buff->end = checkState(buff->map);
 			buff->turn=2;
 			if (buff->end) break;
-		}
 
-		printf("\nPlayer %d has won!\n",buff->end);
-		shmdt(attach);
-		shmdt(buff);
+			sops[0].sem_num = 0;
+			sops[0].sem_op = 1;
+			semop(semaphoreId,sops,1);
+			sops[0].sem_num = 1;
+			sops[0].sem_op = -1;
+			semop(semaphoreId,sops,1);
+		}
+		if (buff->end==3)
+		{
+			printf("\nTie!\n");
+		}
+		else
+		{
+			printf("\nPlayer %d has won!\n",buff->end);
+		}
+		sops[0].sem_num = 1;
+		sops[0].sem_op = -1;
+		semop(semaphoreId,sops,1);
 	}
 	else
 	{
-		semaphoreId = segmentId = semget(semaphoreKey, 0, 0);
+		semaphoreId = semget(semaphoreKey, 2, 0);
+
 		if ((attach = shmat(segmentId, NULL, 0)) == (struct NAC *) -1) {
 			printf("Slave error\n");
 		}
+
 		buff = attach;
-		buff->players=2;
 		printf("\n You have joined the game! \n");
+
 		while(buff->end!=1)
 		{
 			drawMap(buff->map);
@@ -184,16 +220,36 @@ int main(int argc, char** argv) {
 			buff->end = checkState(buff->map);
 			buff->turn=1;
 
-			if (buff->end) break;
-			printf("Please wait for enemys move!\n");
-			while(buff->turn!=2) //2
-			{
-				sleep(1);
-			}
+			if (buff->end==0) printf("\nPlease wait for enemys move!\n");
+
+			sops[0].sem_num = 0;
+			sops[0].sem_op = -1;
+			semop(semaphoreId,sops,1);
+
+			sops[0].sem_num = 1;
+			sops[0].sem_op = 1;
+			semop(semaphoreId,sops,1);
+
+			sops[0].sem_num = 1;
+			sops[0].sem_op = 0;
+			semop(semaphoreId,sops,1);
+
+			if (buff->end)  break;
+
 		}
-		printf("\nPlayer %d has won!\n",buff->end);
+
+		if (buff->end==3)
+		{
+			printf("\nTie!\n");
+		}
+		else
+		{
+			printf("\nPlayer %d has won!\n",buff->end);
+		}
 		shmdt(attach);
 		shmdt(buff);
+		semctl(semaphoreId, 0, IPC_RMID);
+		semctl(semaphoreId, 1, IPC_RMID);
 	}
 	return (0);
 }
